@@ -43,7 +43,7 @@ def full_stripe_check(cc, mm, yy, cvv):
 
         # Step 5: Get Stripe payment token
         stripe_data = (
-            f'type=card&card[number]={cc}&card[cvc]={cvv}&card[exp_year]={yy}&card[exp_month]={mm}'
+            f'type=card&card[number]={cc}&card[cvc]={cvv}&card[exp_month]={mm}&card[exp_year]={yy}'
             '&key=pk_live_51PIMtvHHCyMK11qvc5CeriN2AcT5CJmlRUoaxXPc7ssoFCnt4OUVBqBtSwK4bL091Kq1hYkVZnngesinZd3u0Las00hcFCb4ZD'
         )
 
