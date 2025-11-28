@@ -317,7 +317,11 @@ if __name__ == '__main__':
                     muid=MUID,
                     sid=SID
                 )
+
+    if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
     
     # Run the Flask app (uncomment to enable web access)
     # app.run(debug=True)
+
 
