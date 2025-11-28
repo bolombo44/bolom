@@ -3,7 +3,6 @@ requests
 gunicorn
 jsonify
 faker
-random
 json
 re
 datetime
