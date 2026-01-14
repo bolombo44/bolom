@@ -1,9 +1,0 @@
-Flask
-requests
-gunicorn
-jsonify
-faker
-json
-re
-datetime
-typing
