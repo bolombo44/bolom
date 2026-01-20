@@ -1,4 +1,5 @@
 import json
+import time
 import asyncio
 from datetime import datetime, timedelta
 import os
@@ -7,18 +8,24 @@ import re
 import random
 from typing import Dict, Any, Optional
 from faker import Faker
-
+from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 faker = Faker()
 
+app = Flask(__name__)
+
+
+@app.route("/")
+def home():
+    return
 # ========================================== CONFIG ================================================
 
-TOKEN = os.environ.get("7770017168:AAFQ8DUaoRcff3cSKQVf7qm1FfJOczpRIRg")  # ← MUST set this in Render dashboard → Environment
+TOKEN = os.environ.get("TOKEN")
 if not TOKEN:
-    raise ValueError("Token required")
-
+    raise ValueError("TOKEN environment variable is required")
+    
 ADMIN_ID = 7162753868  # keep or move to env var too if you want
 
 AUTH_FILE = 'authorized.json'
@@ -398,17 +405,19 @@ async def st_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not card_data:
         await update.message.reply_text("❌ Invalid card format!")
         return
-    result = run_automated_process(
-        cc=card_data["cc"],
-        mon=card_data["mm"],
-        yy=card_data["yy"],
-        cvv=card_data["cvv"],
-        user_ag="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        client_element="fake_client_element",
-        guid=str(random.getrandbits(128)),
-        muid=str(random.getrandbits(128)),
-        sid=str(random.getrandbits(128))
-    )
+        
+result = await asyncio.to_thread(
+    run_automated_process,
+    cc=card_data["cc"],
+    mon=card_data["mm"],
+    yy=card_data["yy"],
+    cvv=card_data["cvv"],
+    user_ag="Mozilla/5.0 ...",
+    client_element="fake_client_element",
+    guid=str(random.getrandbits(128)),
+    muid=str(random.getrandbits(128)),
+    sid=str(random.getrandbits(128))
+)
     status_msg = result["status"]
     bin_info = result["bin"]
     response = f"""✅ STRIPE AUTH\n
@@ -440,18 +449,20 @@ async def mchk_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         card_data = check_card(card)
         if not card_data:
             await update.message.reply_text(f"Invalid format → {card}")
-            continue
-        result = run_automated_process(
-            cc=card_data["cc"],
-            mon=card_data["mm"],
-            yy=card_data["yy"],
-            cvv=card_data["cvv"],
-            user_ag="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            client_element="fake_client_element",
-            guid=str(random.getrandbits(128)),
-            muid=str(random.getrandbits(128)),
-            sid=str(random.getrandbits(128))
-        )
+            continue 
+
+result = await asyncio.to_thread(
+    run_automated_process,
+    cc=card_data["cc"],
+    mon=card_data["mm"],
+    yy=card_data["yy"],
+    cvv=card_data["cvv"],
+    user_ag="Mozilla/5.0 ...",
+    client_element="fake_client_element",
+    guid=str(random.getrandbits(128)),
+    muid=str(random.getrandbits(128)),
+    sid=str(random.getrandbits(128))
+)
         status_msg = result["status"]
         bin_info = result["bin"]
         response = f"""✅ STRIPE AUTH\n
@@ -478,10 +489,12 @@ async def main():
     await app.bot.delete_webhook(drop_pending_updates=True)
 
     # Build webhook URL using Render's provided hostname
-    hostname = os.environ.get("bolon")
+    hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
     if not hostname:
-        raise ValueError("RENDER_EXTERNAL_HOSTNAME not found — are you running on Render?")
-    webhook_url = f"https://{hostname}/{TOKEN}"
+        raise ValueError("RENDER_EXTERNAL_HOSTNAME not found")
+   
+   url_path="webhook"
+   webhook_url = f"https://{hostname}/webhook"
 
     print(f"Setting webhook → {webhook_url}")
     await app.bot.set_webhook(
@@ -498,6 +511,7 @@ async def main():
         webhook_url=webhook_url
     )
 
+    
 if __name__ == '__main__':
     print("\n[+]Bot Starting (Webhook mode)...\n")
     asyncio.run(main())
