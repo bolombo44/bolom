@@ -17,7 +17,7 @@ faker = Faker()
 
 TOKEN = os.environ.get("7770017168:AAFQ8DUaoRcff3cSKQVf7qm1FfJOczpRIRg")  # ← MUST set this in Render dashboard → Environment
 if not TOKEN:
-    raise ValueError("7770017168:AAFQ8DUaoRcff3cSKQVf7qm1FfJOczpRIRg")
+    raise ValueError("Token required")
 
 ADMIN_ID = 7162753868  # keep or move to env var too if you want
 
