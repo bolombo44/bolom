@@ -1,0 +1,11 @@
+# Minimum - update versions if you want
+Flask==3.0.3
+gunicorn==23.0.0
+
+# If you use any of these, add them:
+# python-dotenv==1.0.1
+# flask-sqlalchemy==3.1.1
+# psycopg2-binary==2.9.9          # ← if using PostgreSQL
+# pymysql==1.1.1                  # ← if using MySQL
+# requests==2.32.3
+# flask-cors==5.0.0               # if you have frontend calling API
