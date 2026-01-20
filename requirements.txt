@@ -2,6 +2,8 @@
 Flask==3.0.3
 requests==2.32.3
 gunicorn==23.0.0
+python-telegram-bot==21.5
+Faker==30.8.0
 
 # If you use any of these, add them:
 # python-dotenv==1.0.1
@@ -11,3 +13,4 @@ gunicorn==23.0.0
 
 
 # flask-cors==5.0.0               # if you have frontend calling API
+
